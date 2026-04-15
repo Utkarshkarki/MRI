@@ -1,0 +1,118 @@
+.gradcam { padding: 32px; }
+
+.gradcam__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.gradcam__title { font-size: 1.1rem; font-weight: 700; margin-top: 4px; }
+
+/* Toggle */
+.gradcam__toggle {
+  display: flex;
+  gap: 4px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+}
+.gradcam__toggle-btn {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.gradcam__toggle-btn.active {
+  background: var(--accent);
+  color: #000;
+}
+.gradcam__toggle-btn:hover:not(.active) { color: var(--text-primary); }
+
+/* Viewer */
+.gradcam__viewer {
+  display: flex;
+  gap: 16px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.gradcam__viewer--original,
+.gradcam__viewer--heatmap { flex-direction: column; }
+
+.gradcam__pane {
+  position: relative;
+  flex: 1;
+  background: #000;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  min-height: 240px;
+}
+.gradcam__pane-label {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(8,13,20,0.8);
+  backdrop-filter: blur(4px);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  z-index: 2;
+}
+.gradcam__img {
+  width: 100%;
+  height: 280px;
+  object-fit: contain;
+  display: block;
+  transition: opacity 0.3s;
+}
+.gradcam__placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 280px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* Legend */
+.gradcam__legend { margin-top: 16px; }
+.gradcam__legend-title {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: block;
+  margin-bottom: 6px;
+}
+.gradcam__legend-bar {
+  height: 8px;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #00008b, #0000ff, #00ffff, #ffff00, #ff8000, #ff0000);
+}
+.gradcam__legend-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+.gradcam__legend-labels span { font-size: 0.72rem; color: var(--text-muted); }
+
+/* Note */
+.gradcam__note {
+  margin-top: 12px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  padding-left: 12px;
+  border-left: 2px solid var(--border);
+}

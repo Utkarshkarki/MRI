@@ -1,0 +1,22 @@
+.results-panel {
+  margin-top: 40px;
+}
+
+.results-panel__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+@media (max-width: 968px) {
+  .results-panel__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.results-panel__col {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}

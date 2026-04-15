@@ -1,0 +1,61 @@
+.probchart { padding: 32px; }
+.probchart__title { font-size: 1.1rem; font-weight: 700; margin-top: 4px; margin-bottom: 24px; }
+
+.probchart__bars { display: flex; flex-direction: column; gap: 16px; }
+
+.probchart__row { transition: var(--transition); }
+.probchart__row--top .probchart__row-header { opacity: 1; }
+
+.probchart__row-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 7px;
+}
+.probchart__cls-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.probchart__row--top .probchart__cls-label { color: var(--text-primary); }
+
+.probchart__top-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 6px currentColor;
+}
+.probchart__pct {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.probchart__track {
+  height: 10px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.probchart__fill {
+  height: 100%;
+  border-radius: 99px;
+  width: 0;
+  animation: growBar 1.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes growBar {
+  from { width: 0 !important; }
+  to   { width: var(--target-width, 0); }
+}
+
+.probchart__note {
+  margin-top: 20px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  border-left: 2px solid var(--border);
+  padding-left: 12px;
+}

@@ -1,0 +1,152 @@
+.uploader-section {
+  padding: 36px 40px;
+  margin-bottom: 32px;
+}
+.uploader-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+}
+
+/* ── Drop Zone ──────────────────────────────────────────────────────── */
+.drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-md);
+  min-height: 260px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+  background: rgba(0,212,255,0.02);
+}
+.drop-zone:hover,
+.drop-zone--active {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+  box-shadow: 0 0 30px var(--accent-glow);
+}
+.drop-zone--has-file { cursor: default; border-style: solid; }
+
+/* Empty state */
+.drop-zone__empty { text-align: center; padding: 40px 20px; }
+.drop-zone__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  background: var(--accent-glow);
+  border: 1px solid var(--border);
+  color: var(--accent);
+  margin-bottom: 16px;
+  transition: var(--transition);
+}
+.drop-zone:hover .drop-zone__icon { transform: scale(1.1); }
+.drop-zone__title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+.drop-zone__sub { color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 14px; }
+.drop-zone__formats {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+.drop-zone__formats span {
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+}
+
+/* Preview state */
+.drop-zone__preview {
+  width: 100%;
+  height: 100%;
+  min-height: 260px;
+  position: relative;
+}
+.drop-zone__preview-img {
+  width: 100%;
+  height: 260px;
+  object-fit: contain;
+  display: block;
+  background: #000;
+}
+.drop-zone__preview-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0; right: 0;
+  background: linear-gradient(to top, rgba(8,13,20,0.95), transparent);
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+.drop-zone__filename {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 75%;
+}
+.drop-zone__filesize {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* Scan-line effect visible when a file is loaded */
+.drop-zone__scanline {
+  position: absolute;
+  left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.6;
+  animation: scanline 2.5s linear infinite;
+}
+
+/* ── Actions ────────────────────────────────────────────────────────── */
+.uploader-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.btn-ghost {
+  padding: 12px 20px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.btn-ghost:hover { border-color: var(--danger); color: var(--danger); }
+
+/* ── Error ──────────────────────────────────────────────────────────── */
+.uploader-error {
+  margin-top: 14px;
+  padding: 12px 16px;
+  background: var(--danger-glow);
+  border: 1px solid rgba(255,71,87,0.3);
+  border-radius: var(--radius-sm);
+  color: var(--danger);
+  font-size: 0.88rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
