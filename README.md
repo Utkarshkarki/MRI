@@ -111,7 +111,14 @@ If you need to retrain or fine-tune the pipeline on a new dataset, run the train
 python -m MODEL.train
 ```
 
-### Phase B: Local Web Server Sequence
+### Phase B: Detailed Model Evaluation
+If you want to view the raw mathematical performance (Sensitivity, Specificity, F1-Score) of your trained weights against the unseen validation set, run the evaluation script:
+```bash
+python evaluate.py
+```
+*(Note: You must have a complete `best_model.pth` saved in the root directory for this to work).*
+
+### Phase C: Local Web Server Sequence
 You need to launch **both** the backend API and the frontend UI concurrently in separate terminal windows.
 
 **Terminal 1 — Launch the FastAPI Backend:**
