@@ -1,61 +1,136 @@
-# Robust Brain Tumor AI Analysis System 🧠
+<div align="center">
+  <h1>🧠 Robust Brain Tumor AI Analysis System</h1>
+  <p><strong>A production-grade, end-to-end medical imaging classification and visualization framework.</strong></p>
+  
+  [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/downloads/)
+  [![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-ee4c2c.svg)](https://pytorch.org/)
+  [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-00a393.svg)](https://fastapi.tiangolo.com/)
+  [![React](https://img.shields.io/badge/React-18.0+-61dafb.svg)](https://reactjs.org/)
+  [![Vite](https://img.shields.io/badge/Vite-5.0+-646cff.svg)](https://vitejs.dev/)
+</div>
 
-An end-to-end medical imaging classification and visualization framework to detect brain tumors securely, predictably, and interpretably using PyTorch and Streamlit.
+<br />
 
-## Overview
+## 📖 Overview
 
-Brain tumor detection is a pivotal area in medical diagnostics. Early and accurate detection substantially improves survival rates. However, real-world clinical implementation faces barriers such as data scarcity, imbalance, and the "black-box" nature of advanced AI models. 
+Brain tumor detection is a pivotal area in medical diagnostics where early and accurate detection substantially improves survival rates. However, real-world clinical implementation faces barriers such as dataset class imbalance, the "black-box" nature of advanced AI models, and a lack of uncertainty metrics in point-prediction models.
 
-This repository provides an end-to-end Artificial Intelligence system designed to address these challenges, inspired by systematic literature reviews emphasizing the need for **Explainable AI (XAI)**, **Robust Data Augmentations**, and **Confidence/Uncertainty Evaluation** (Alam et al., 2024). 
+This system addresses these challenges directly. It provides an enterprise-ready **React / FastAPI** stack built on top of a highly robust **PyTorch** backbone.
 
-Our system leverages a robust deep learning backbone combined with **Grad-CAM (Gradient-weighted Class Activation Mapping)** for visual interpretability and **Monte Carlo (MC) Dropout** for out-of-distribution anomaly and uncertainty detection, packaged into a highly accessible Streamlit application.
+Inspired by systematic literature reviews (Alam et al., 2024), this application features **Explainable AI (XAI)** localization via Grad-CAM, and **Confidence/Uncertainty Evaluation** by utilizing Monte Carlo (MC) Dropout.
 
-## Key Features
+---
 
-1. **State-of-the-Art Deep Learning**: Utilizes a Convolutional Neural Network (ResNet-50) backbone modified for diagnostic robustness, achieving high-accuracy feature extraction.
-2. **Explainable AI (XAI) Integration**: Deploys Grad-CAM to highlight precise regions of the brain that influenced the model's prediction. This transparency aims to foster clinician trust and improve diagnostic usability.
-3. **Monte Carlo Uncertainty Estimation**: Employs MC Dropout to output a prediction confidence band rather than a standard single-point probability. This flags highly uncertain scans, effectively acting as an anomaly detector for unseen or out-of-distribution images.
-4. **Resilient Data Augmentation**: Addresses dataset heterogeneity and limited annotations using the `Albumentations` library, applying contrast enhancements (CLAHE) and spatial variance mimicking MRI scanner disparities.
-5. **Real-time Diagnostic UI**: A fast, interactive Streamlit frontend built for immediate clinical upload and review, reducing diagnostic turnaround time.
+## ✨ Key Technical Features
 
-## Architecture & Scientific Context
+### 🧩 1. Deep Learning Architecture
+* **MCDropoutResNet50:** A modified ResNet-50 backbone specifically optimized for medical imaging feature extraction.
+* **Ensemble Heads:** Implements 3 parallel classification heads, averaging logits to improve stability across batches.
+* **Focal Loss:** Natively combats class imbalance (common in rare tumor phenotypes) without relying exclusively on synthetic dataset explosions.
 
-The architecture choices made in this repository map strictly to advancing trends in AI-assisted Neuro-Oncology:
-- **CNN Backbones**: Studies show that Convolutional architecture consistency achieves >90% precision for brain tumor types and effectively maps intricate patterns (Alam et al., 2024).
-- **Focal Loss**: To combat class imbalance natively during training without synthetic dataset explosions.
-- **XAI (Explainability)**: By overlaying heatmaps (Grad-CAM), we convert a complex mathematical matrix into a biologically actionable localization metric, aiding surgical planning and reducing diagnosis time. 
+### 🔍 2. Explainable AI (XAI)
+* **Grad-CAM (Gradient-weighted Class Activation Mapping):** Converts complex latent matrices into biologically actionable heatmaps. By overlaying these spatial activations onto the original MRI, clinicians can visually verify which anatomical regions drove the model's pathology prediction.
 
-## Installation & Setup
+### 🧪 3. Uncertainty Quantification (Anomaly Detection)
+* **Monte Carlo Dropout:** Runs $N=15$ stochastic forward passes at inference time, utilizing dropout as a Bayesian approximation.
+* **Shannon Entropy:** Calculates variance across the predictions. If the entropy exceeds a predefined threshold, the system triggers a **Clinical Anomaly Alert**, aggressively flagging out-of-distribution, noisy, or edge-case images that require human radiologist intervention.
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/Utkarshkarki/MRI.git
-   cd MRI
-   ```
+### 💻 4. Production Web Stack
+* **FastAPI Backend:** A heavily-typed, asynchronous, RESTful Python API exposing the PyTorch inference models (`/api/predict`).
+* **React + Vite Frontend:** An ultra-fast, premium medical UI featuring drag-and-drop intake, scan-line animations, live probability charts, and clinical urgency routing.
 
-2. **Install Dependencies:**
-   Ensure you have Python 3.9+ installed.
-   ```bash
-   pip install -r requirements.txt
-   ```
+---
 
-3. **Data Preparation:**
-   Place your MRI scans inside the `Dataset` folder split by subclass (e.g., `Dataset/glioma`, `Dataset/meningioma`, `Dataset/notumor`, `Dataset/pituitary`).
+## 🛠 Project Structure
 
-## Usage
+```text
+MRI/
+├── MODEL/                    # Core Deep Learning logic
+│   ├── dataset.py            # Custom PyTorch Dataset & Stratified Loader
+│   ├── explainability.py     # Grad-CAM heatmap generation mechanics
+│   ├── inference.py          # Unified InferenceEngine pipeline
+│   ├── loss.py               # Imbalanced FocalLoss formulations
+│   ├── models.py             # MCDropoutResNet50 Architecture
+│   ├── train.py              # Automated GPU-accelerated training orchestrator
+│   ├── transforms.py         # Albumentations MRI augmentations
+│   └── uncertainty.py        # Entropy and bounds estimations
+│
+├── frontend/                 # React/Vite SPA (Single Page Application)
+│   ├── src/
+│   │   ├── components/       # UI Components (Hero, Uploader, GradCAMViewer, etc.)
+│   │   ├── App.jsx           # Main React coordinator
+│   │   └── index.css         # Clinical dark-mode design system tokens
+│   └── index.html            # Vite entrypoint with SEO tracking
+│
+├── api.py                    # FastAPI application layer
+├── app.py                    # Legacy Streamlit prototype UI
+├── config.yaml               # Engine thresholds, epochs, and hyperparams
+└── requirements.txt          # Shared Python dependencies
+```
 
-### 1. Training the Model
-To train the CNN model with Focal Loss on your dataset and generate the optimal weights (`best_model.pth`):
+---
+
+## 🚀 Installation & Setup
+
+### 1. Clone the repository
+```bash
+git clone https://github.com/Utkarshkarki/MRI.git
+cd MRI
+```
+
+### 2. Configure Backend Engine (Python / Conda / Venv)
+Ensure you have Python 3.9+ and CUDA capability (if processing on GPU).
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Data Preparation
+Place your structured MRI scans inside the `Dataset` directory split by subclass:
+```text
+Dataset/
+ ├── glioma/
+ ├── meningioma/
+ ├── notumor/
+ └── pituitary/
+```
+
+### 4. Configure Frontend (Node.js)
+Ensure you have Node 18+ installed.
+```bash
+cd frontend
+npm install
+```
+
+---
+
+## 💻 Usage & Deployment
+
+### Phase A: Model Training
+If you need to retrain or fine-tune the pipeline on a new dataset, run the training orchestrator. *Note: Training automatically utilizes Automatic Mixed Precision (AMP) and creates checkpoint resumption targets.*
 ```bash
 python -m MODEL.train
 ```
 
-### 2. Launching the Clinical Interface
-To start the real-time Streamlit diagnostic system:
+### Phase B: Local Web Server Sequence
+You need to launch **both** the backend API and the frontend UI concurrently in separate terminal windows.
+
+**Terminal 1 — Launch the FastAPI Backend:**
 ```bash
-streamlit run app.py
+uvicorn api:app --port 8000 --reload
 ```
-This will open a local web server (usually at `http://localhost:8501`) empowering you to upload unseen MRI scans and view the resulting predictions, confidence levels, and Grad-CAM insights interactively.
+*(Backend documentation and interactive Swagger UI available at http://127.0.0.1:8000/docs)*
+
+**Terminal 2 — Launch the React Frontend:**
+```bash
+cd frontend
+npm run dev
+```
+*(Navigate to http://localhost:5173 to access the diagnostic dashboard)*
+
+---
+
+## ⚕️ Regulatory & Medical Disclaimer
+**This project is intended strictly for academic, research, and non-commercial decision-support purposes.** The output interpretations, Grad-CAM overlays, and Uncertainty thresholds do not constitute official medical diagnoses. Clinical treatment plans must always be corroborated by qualified human neurological and radiological staff.
 
 ---
 
