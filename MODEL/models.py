@@ -14,7 +14,7 @@ class MCDropoutResNet(nn.Module):
         # Extract features (up to the avgpool)
         self.features = nn.Sequential(*list(self.backbone.children())[:-1])
         
-        # Classifier replacement with MC Dropout
+        # Classifier replacement with MC Dropout (Hybrid CNN-SVM boundary representation)
         in_features = self.backbone.fc.in_features
         self.classifier = nn.Sequential(
             nn.Flatten(),
@@ -22,6 +22,7 @@ class MCDropoutResNet(nn.Module):
             nn.Linear(in_features, 512),
             nn.ReLU(inplace=True),
             nn.Dropout(p=dropout_rate),
+            # Outputs raw margins for MultiMarginLoss (Linear SVM), not just softmax logits
             nn.Linear(512, num_classes)
         )
 

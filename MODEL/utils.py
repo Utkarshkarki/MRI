@@ -28,3 +28,45 @@ class FocalLoss(nn.Module):
             return focal_loss.sum()
         else:
             return focal_loss
+
+from sklearn.metrics import recall_score, f1_score, confusion_matrix
+import numpy as np
+
+def calculate_clinical_metrics(preds, targets):
+    """
+    Computes clinical evaluation metrics: Sensitivity (Recall), Specificity, and F1-Score (Macro).
+    These metrics are highlighted in medical literature as critical for imbalanced clinical sets.
+    """
+    preds_np = preds.cpu().numpy()
+    targets_np = targets.cpu().numpy()
+    
+    # Sensitivity corresponds to recall in a multi-class setting
+    sensitivity = recall_score(targets_np, preds_np, average='macro', zero_division=0)
+    
+    # F1 Score
+    f1 = f1_score(targets_np, preds_np, average='macro', zero_division=0)
+    
+    # Specificity is more complex in multiclass, we compute True Negative Rate per class and average
+    cm = confusion_matrix(targets_np, preds_np)
+    
+    specificity_sum = 0
+    valid_classes = 0
+    num_classes = cm.shape[0]
+    
+    if num_classes > 1:
+        for i in range(num_classes):
+            tn = np.sum(cm) - np.sum(cm[i, :]) - np.sum(cm[:, i]) + cm[i, i]
+            fp = np.sum(cm[:, i]) - cm[i, i]
+            if (tn + fp) > 0:
+                specificity_sum += tn / (tn + fp)
+                valid_classes += 1
+                
+        specificity = specificity_sum / valid_classes if valid_classes > 0 else 0.0
+    else:
+        specificity = 0.0 # Undefined for single class targets in a batch
+        
+    return {
+        'sensitivity': sensitivity,
+        'specificity': specificity,
+        'f1_score': f1
+    }
