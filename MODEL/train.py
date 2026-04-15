@@ -41,8 +41,9 @@ def train_model(data_dir, num_epochs=20, batch_size=32, lr=1e-4, device='cuda' i
     # Overwrite transform for validation dataset
     val_dataset.dataset.transform = get_val_transforms()
     
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
+    workers = 0 if os.name == 'nt' else 4
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=workers)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=workers)
     
     # Initialize Model, Loss (Hybrid SVM formulation), Optimizer
     model = MCDropoutResNet(num_classes=4).to(device)
@@ -125,4 +126,4 @@ def train_model(data_dir, num_epochs=20, batch_size=32, lr=1e-4, device='cuda' i
     return model
 
 if __name__ == '__main__':
-    train_model(data_dir='./Dataset', num_epochs=10, batch_size=32)
+    train_model(data_dir='./Dataset', num_epochs=5, batch_size=32)

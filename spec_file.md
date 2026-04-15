@@ -4,3 +4,5 @@ python -m venv mri
 source mri/Scripts/activate
 pip install -r requirements.txt
 streamlit run app.py
+source mri/Scripts/activate
+python -m MODEL.train
