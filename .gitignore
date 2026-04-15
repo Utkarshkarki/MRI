@@ -1,0 +1,16 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# PyTorch
+*.pth
+*.pt
+*.cpkl
+
+# Dataset
+Dataset/
+
+# Streamlit
+.streamlit/
+.DS_Store
