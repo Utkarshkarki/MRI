@@ -1,68 +1,60 @@
 import torch
-import numpy as np
 import cv2
+import numpy as np
+import yaml
+
 from MODEL.models import MCDropoutResNet
 from MODEL.transforms import get_val_transforms
-from MODEL.explainability import GradCAM, overlay_cam_on_image
+from MODEL.uncertainty import UncertaintyEstimator
+from MODEL.explainability import GradCAM, build_cam_overlay
 
 class InferenceEngine:
-    def __init__(self, model_path, device='cpu'):
-        self.device = device
-        self.classes = ['glioma', 'meningioma', 'notumor', 'pituitary']
-        self.model = MCDropoutResNet(num_classes=4).to(self.device)
-        import os
-        if os.path.exists(model_path):
-            self.model.load_state_dict(torch.load(model_path, map_location=device, weights_only=True))
-        else:
-            print(f"Warning: Model weights not found at {model_path}. Using uninitialized weights.")
+    def __init__(self, weights_path="best_model.pth", config_path="config.yaml"):
+        try:
+            with open(config_path, 'r') as f:
+                self.config = yaml.safe_load(f)
+        except Exception:
+            self.config = {'model': {'num_classes': 4}, 'uncertainty': {'mc_passes': 15, 'anomaly_threshold': 0.25}}
             
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.classes = ['glioma', 'meningioma', 'notumor', 'pituitary']
+        
+        self.model = MCDropoutResNet(num_classes=self.config['model']['num_classes'])
+        try:
+            self.model.load_state_dict(torch.load(weights_path, map_location=self.device, weights_only=True))
+        except:
+            print("Notice: Missing weights. Initializing blind engine for testing routing structure.")
+            
+        self.model = self.model.to(self.device).eval()
+        
         self.transform = get_val_transforms()
-        # The target layer for ResNet50 is usually the last basic block of layer4
-        self.grad_cam = GradCAM(self.model, self.model.features[-1])
+        self.uncertainty_engine = UncertaintyEstimator(
+            self.model, 
+            num_passes=self.config['uncertainty']['mc_passes'], 
+            device=self.device
+        )
+        
+        self.grad_cam = GradCAM(self.model, self.model.backbone[-1])
 
-    def predict_with_uncertainty(self, image_np, num_passes=30):
-        """
-        Runs Monte Carlo Dropout to estimate uncertainty.
-        Args:
-           image_np (np.array): RGB image
-           num_passes (int): number of forward passes
-        """
-        # Preprocessing
-        augmented = self.transform(image=image_np)
+    def predict(self, raw_rgb_image):
+        augmented = self.transform(image=raw_rgb_image)
         input_tensor = augmented['image'].unsqueeze(0).to(self.device)
         
-        self.model.train() # Enable dropout for MC Dropout
-        self.model.enable_dropout()
+        uncertainty_output = self.uncertainty_engine.estimate(input_tensor)
+        predicted_idx = uncertainty_output['prediction_idx']
         
-        # GPU Optimization: Batch the forward passes into a single parallel operation
-        input_batch = input_tensor.repeat(num_passes, 1, 1, 1)
+        predicted_class_name = self.classes[predicted_idx]
+        is_anomalous = uncertainty_output['uncertainty_score'] > self.config['uncertainty']['anomaly_threshold']
         
-        with torch.no_grad():
-            out = self.model(input_batch)
-            probs = torch.softmax(out, dim=1)
-            preds = probs.cpu().numpy() # Shape: (passes, classes)
-        
-        mean_probs = np.mean(preds, axis=0) # Shape: (classes,)
-        std_probs = np.std(preds, axis=0) # Shape: (classes,)
-        
-        predicted_class_idx = np.argmax(mean_probs)
-        predicted_class = self.classes[predicted_class_idx]
-        confidence = mean_probs[predicted_class_idx]
-        uncertainty = std_probs[predicted_class_idx] # Predictive uncertainty for the predicted class
-        
-        # Generate Grad-CAM for interpretation (using eval mode)
         self.model.eval()
-        cam_mask, _ = self.grad_cam.generate(input_tensor, predicted_class_idx)
-        
-        # Resize original image to match tensor size for overlay
-        # Tensor size is 224x224 based on our transforms
-        img_resized = cv2.resize(image_np, (224, 224))
-        cam_overlay = overlay_cam_on_image(img_resized, cam_mask)
+        cam_weight_map, _ = self.grad_cam.generate(input_tensor, target_class=predicted_idx)
+        cam_overlay = build_cam_overlay(cv2.resize(raw_rgb_image, (224, 224)), cam_weight_map)
         
         return {
-            'predicted_class': predicted_class,
-            'confidence': confidence,
-            'uncertainty': uncertainty,
-            'mean_probs': mean_probs,
-            'cam_overlay': cam_overlay
+            'diagnosis': predicted_class_name,
+            'confidence': uncertainty_output['confidence'],
+            'uncertainty': uncertainty_output['uncertainty_score'],
+            'is_anomaly': is_anomalous,
+            'probabilities': uncertainty_output['mean_probs'],
+            'heatmap_overlay': cam_overlay
         }

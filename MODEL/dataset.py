@@ -1,57 +1,67 @@
+import os
 import cv2
 import numpy as np
-import os
-from torch.utils.data import Dataset
-from PIL import Image
+import torch
+from torch.utils.data import Dataset, DataLoader
+from torch.utils.data.sampler import WeightedRandomSampler
 
 class BrainTumorDataset(Dataset):
-    def __init__(self, data_dir, transform=None, classes=None):
-        """
-        Args:
-            data_dir (str): Path to the dataset directory.
-            transform (callable, optional): Optional transform to be applied on a sample.
-            classes (list, optional): List of class names. Defaults to glioma, meningioma, notumor, pituitary.
-        """
+    def __init__(self, data_dir, transform=None):
         self.data_dir = data_dir
         self.transform = transform
-        
-        if classes is None:
-            self.classes = ['glioma', 'meningioma', 'notumor', 'pituitary']
-        else:
-            self.classes = classes
-            
-        self.class_to_idx = {cls_name: i for i, cls_name in enumerate(self.classes)}
+        self.classes = ['glioma', 'meningioma', 'notumor', 'pituitary']
         
         self.image_paths = []
         self.labels = []
         
-        for cls_name in self.classes:
+        for idx, cls_name in enumerate(self.classes):
             cls_dir = os.path.join(data_dir, cls_name)
-            if not os.path.exists(cls_dir):
-                print(f"Warning: Directory {cls_dir} does not exist.")
+            if not os.path.isdir(cls_dir):
                 continue
                 
-            for fname in os.listdir(cls_dir):
-                if fname.lower().endswith(('.png', '.jpg', '.jpeg')):
-                    self.image_paths.append(os.path.join(cls_dir, fname))
-                    self.labels.append(self.class_to_idx[cls_name])
-
+            for img_name in os.listdir(cls_dir):
+                self.image_paths.append(os.path.join(cls_dir, img_name))
+                self.labels.append(idx)
+                
     def __len__(self):
         return len(self.image_paths)
-
+        
     def __getitem__(self, idx):
         img_path = self.image_paths[idx]
-        label = self.labels[idx]
-        
-        # Read image using OpenCV (BGR to RGB)
-        image = cv2.imread(img_path)
-        if image is None:
-            raise ValueError(f"Failed to load image: {img_path}")
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        img = cv2.imread(img_path)
+        if img is None:
+            img = np.zeros((224, 224, 3), dtype=np.uint8)
+        else:
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         
         if self.transform:
-            # Assume albumentations is used: albumentations returns a dict
-            augmented = self.transform(image=image)
-            image = augmented['image']
+            augmented = self.transform(image=img)
+            img = augmented['image']
             
-        return image, label
+        label = self.labels[idx]
+        return img, label
+
+def get_stratified_loader(dataset, batch_size, is_train=True):
+    if not is_train:
+        return DataLoader(
+            dataset, batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True
+        )
+
+    # PyTorch random_split returns a Subset, which hides the labels inside indices
+    if hasattr(dataset, 'dataset') and hasattr(dataset, 'indices'):
+        subset_labels = [dataset.dataset.labels[i] for i in dataset.indices]
+    else:
+        subset_labels = dataset.labels
+
+    # Calculate frequencies inside this specific subset
+    class_counts = np.bincount(subset_labels)
+    class_weights = 1.0 / torch.tensor(class_counts, dtype=torch.float)
+    
+    # Assign the calculated structural weight to each sample index
+    sample_weights = class_weights[subset_labels]
+    
+    sampler = WeightedRandomSampler(weights=sample_weights, num_samples=len(sample_weights), replacement=True)
+    
+    return DataLoader(
+        dataset, batch_size=batch_size, sampler=sampler, num_workers=4, pin_memory=True
+    )
