@@ -8,7 +8,7 @@ model:
   dropout_rate: 0.5
   
 training:
-  batch_size: 32 # Scaled down structurally to ensure safe memory on typical instances
+  batch_size: 16 # Reduced 32→16 to prevent CUDA OOM on backward pass
   num_epochs: 50
   learning_rate: 1e-3
 

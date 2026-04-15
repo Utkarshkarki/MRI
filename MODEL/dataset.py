@@ -44,7 +44,7 @@ class BrainTumorDataset(Dataset):
 def get_stratified_loader(dataset, batch_size, is_train=True):
     if not is_train:
         return DataLoader(
-            dataset, batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True
+            dataset, batch_size=batch_size, shuffle=False, num_workers=2, pin_memory=True
         )
 
     # PyTorch random_split returns a Subset, which hides the labels inside indices
@@ -63,5 +63,5 @@ def get_stratified_loader(dataset, batch_size, is_train=True):
     sampler = WeightedRandomSampler(weights=sample_weights, num_samples=len(sample_weights), replacement=True)
     
     return DataLoader(
-        dataset, batch_size=batch_size, sampler=sampler, num_workers=4, pin_memory=True
+        dataset, batch_size=batch_size, sampler=sampler, num_workers=2, pin_memory=True
     )
