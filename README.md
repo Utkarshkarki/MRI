@@ -111,6 +111,9 @@ If you need to retrain or fine-tune the pipeline on a new dataset, run the train
 python -m MODEL.train
 ```
 
+> **⚠️ CRITICAL: Weights in RAM**
+> If your FastAPI backend is currently running while `train.py` finishes a new epoch and overwrites `best_model.pth`, **the backend will not automatically know.** The API loads weights into memory strictly at startup for performance. You must manually stop the API (`Ctrl+C`) and restart it to load your newly trained model.
+
 ### Phase B: Detailed Model Evaluation
 If you want to view the raw mathematical performance (Sensitivity, Specificity, F1-Score) of your trained weights against the unseen validation set, run the evaluation script:
 ```bash
