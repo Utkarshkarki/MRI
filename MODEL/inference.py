@@ -34,17 +34,16 @@ class InferenceEngine:
         self.model.train() # Enable dropout for MC Dropout
         self.model.enable_dropout()
         
-        preds = []
-        with torch.no_grad():
-            for _ in range(num_passes):
-                out = self.model(input_tensor)
-                probs = torch.softmax(out, dim=1)
-                preds.append(probs.cpu().numpy())
-                
-        preds = np.array(preds) # Shape: (passes, 1, classes)
+        # GPU Optimization: Batch the forward passes into a single parallel operation
+        input_batch = input_tensor.repeat(num_passes, 1, 1, 1)
         
-        mean_probs = np.mean(preds, axis=0)[0]
-        std_probs = np.std(preds, axis=0)[0]
+        with torch.no_grad():
+            out = self.model(input_batch)
+            probs = torch.softmax(out, dim=1)
+            preds = probs.cpu().numpy() # Shape: (passes, classes)
+        
+        mean_probs = np.mean(preds, axis=0) # Shape: (classes,)
+        std_probs = np.std(preds, axis=0) # Shape: (classes,)
         
         predicted_class_idx = np.argmax(mean_probs)
         predicted_class = self.classes[predicted_class_idx]

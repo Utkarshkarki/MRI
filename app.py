@@ -26,10 +26,13 @@ st.markdown("""
 st.title("🧠 Robust Brain Tumor AI Analysis")
 st.markdown("Upload a brain MRI scan to perform classification with uncertainty estimation and Grad-CAM interpretability.")
 
+import torch
+
 # Initialize Inference Engine
 @st.cache_resource
 def load_engine():
-    return InferenceEngine(model_path='best_model.pth', device='cpu')
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    return InferenceEngine(model_path='best_model.pth', device=device)
 
 engine = load_engine()
 
