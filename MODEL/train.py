@@ -37,13 +37,25 @@ class GPUOptimizedTrainer:
         self.use_amp = self.config['gpu']['mixed_precision']
         self.scaler = torch.amp.GradScaler(enabled=self.use_amp)
         
+        # Checkpoint Resume Logic natively baked into the constructor
+        self.start_epoch = 0
+        if os.path.exists('latest_checkpoint.pth'):
+            print("\n[ACTIVE] Found previously saved state. Injecting checkpoint targets to resume training...")
+            checkpoint = torch.load('latest_checkpoint.pth', map_location=self.device, weights_only=False)
+            self.model.load_state_dict(checkpoint['model_state_dict'])
+            self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            self.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+            self.scaler.load_state_dict(checkpoint['scaler_state_dict'])
+            self.start_epoch = checkpoint['epoch'] + 1
+            print(f"--> Continuing straight from Epoch {self.start_epoch + 1}")
+        
     def train(self):
         print(f"Beginning Structural Training Sequence on Engine: {self.device}...")
         best_acc = 0.0
         best_wts = copy.deepcopy(self.model.state_dict())
         epochs = self.config['training']['num_epochs']
         
-        for epoch in range(epochs):
+        for epoch in range(self.start_epoch, epochs):
             print(f"\nEpoch {epoch+1}/{epochs}")
             for phase in ['train', 'val']:
                 if phase == 'train':
@@ -85,6 +97,15 @@ class GPUOptimizedTrainer:
                     best_acc = ep_acc
                     best_wts = copy.deepcopy(self.model.state_dict())
                     torch.save(best_wts, 'best_model.pth')
+                    
+            # Safe-save absolute structural layout at the immediate end of every epoch cycle
+            torch.save({
+                'epoch': epoch,
+                'model_state_dict': self.model.state_dict(),
+                'optimizer_state_dict': self.optimizer.state_dict(),
+                'scheduler_state_dict': self.scheduler.state_dict(),
+                'scaler_state_dict': self.scaler.state_dict()
+            }, 'latest_checkpoint.pth')
                     
         print(f"\nTraining Routine Terminated. Peak Validation Stability Hit: {best_acc:.4f}")
 
