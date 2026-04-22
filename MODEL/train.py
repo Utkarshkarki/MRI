@@ -22,12 +22,16 @@ class GPUOptimizedTrainer:
         train_size = int(0.8 * len(self.full_dataset))
         val_size = len(self.full_dataset) - train_size
         
-        gen = torch.Generator().manual_seed(42)
-        train_dataset, val_dataset = random_split(self.full_dataset, [train_size, val_size], generator=gen)
-        val_dataset.dataset.transform = get_val_transforms()
+        self.train_dataset = copy.deepcopy(self.full_dataset)
+        self.val_dataset = copy.deepcopy(self.full_dataset)
+        self.val_dataset.transform = get_val_transforms()
         
-        self.train_loader = get_stratified_loader(train_dataset, self.config['training']['batch_size'], is_train=True)
-        self.val_loader = get_stratified_loader(val_dataset, self.config['training']['batch_size'], is_train=False)
+        gen = torch.Generator().manual_seed(42)
+        indices = torch.randperm(len(self.full_dataset), generator=gen).tolist()
+        self.train_subset = torch.utils.data.Subset(self.train_dataset, indices[:train_size])
+        self.val_subset = torch.utils.data.Subset(self.val_dataset, indices[train_size:])
+        self.train_loader = get_stratified_loader(self.train_subset, self.config['training']['batch_size'], is_train=True)
+        self.val_loader = get_stratified_loader(self.val_subset, self.config['training']['batch_size'], is_train=False)
         
         self.model = MCDropoutResNet(num_classes=self.config['model']['num_classes']).to(self.device)
         self.criterion = CombinedLoss()
@@ -45,7 +49,8 @@ class GPUOptimizedTrainer:
             self.model.load_state_dict(checkpoint['model_state_dict'])
             self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
             self.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
-            self.scaler.load_state_dict(checkpoint['scaler_state_dict'])
+            if checkpoint.get('scaler_state_dict'):
+                self.scaler.load_state_dict(checkpoint['scaler_state_dict'])
             self.start_epoch = checkpoint['epoch'] + 1
             print(f"--> Continuing straight from Epoch {self.start_epoch + 1}")
         
