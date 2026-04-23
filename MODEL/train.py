@@ -38,8 +38,8 @@ class GPUOptimizedTrainer:
         self.optimizer = optim.AdamW(self.model.parameters(), lr=float(self.config['training']['learning_rate']))
         self.scheduler = optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=self.config['training']['num_epochs'])
         
-        self.use_amp = self.config['gpu']['mixed_precision']
-        self.scaler = torch.amp.GradScaler(enabled=self.use_amp)
+        self.use_amp = self.config['gpu']['mixed_precision'] and self.device.type == 'cuda'
+        self.scaler = torch.amp.GradScaler('cuda', enabled=self.use_amp)
         
         # Checkpoint Resume Logic natively baked into the constructor
         self.start_epoch = 0
@@ -78,13 +78,23 @@ class GPUOptimizedTrainer:
                     self.optimizer.zero_grad()
                     
                     with torch.set_grad_enabled(phase == 'train'):
-                        with torch.amp.autocast('cuda', enabled=self.use_amp):
+                        with torch.amp.autocast(self.device.type, enabled=self.use_amp):
                             outputs = self.model(inputs)
                             loss = self.criterion(outputs, labels)
                             _, preds = torch.max(outputs, 1)
                             
                         if phase == 'train':
                             self.scaler.scale(loss).backward()
+                            # Unscale before clipping so clip operates on true gradient magnitudes
+                            self.scaler.unscale_(self.optimizer)
+                            # Skip batch entirely if NaN/Inf gradients are detected
+                            grad_norm = torch.nn.utils.clip_grad_norm_(
+                                self.model.parameters(), max_norm=1.0
+                            )
+                            if not torch.isfinite(grad_norm):
+                                self.scaler.update()  # Still update scale factor (it will decrease)
+                                self.optimizer.zero_grad()
+                                continue
                             self.scaler.step(self.optimizer)
                             self.scaler.update()
                             
